@@ -1,0 +1,111 @@
+#!/bin/bash
+
+#CHECK FOR REPEATS GIVEN FILE NAME + ARRAY OF USED NAMES
+repeat(){
+        check=$(echo $1 | tr '[:upper:]' '[:lower:]')
+        for i in $2;
+        do
+                if [[ "$check" == "$i" ]]; then
+                        return 0
+                fi
+        done
+        return 1
+}
+
+
+#RECURSIVE BLOCK
+checkR(){
+	declare -a usedNames
+        for file in "$1"/*
+        do
+		if [ -d $file ]; then
+                	if [ -r $file ]; then
+      	                     checkR $file
+                        else
+                             printf "Cannot read $file .\n"
+                        fi
+                elif [[ ! $file =~ $1/[_A-Za-z][_A-Za-z\.\-]{0,13}$ ]]; then
+                        printf "%s\n" "$file"
+                elif repeat $file $usedNames ; then
+                        printf "%s\n" "$file"
+                else
+                        usedNames+=($(echo $file | tr 'A-Z' 'a-z'))
+                        if [ ! -r $file ]; then
+                             	printf "Cannot read $file.\n"
+			fi
+                fi
+        done
+	
+}
+
+#NON_RECURSIVE BLOCK
+check(){
+        declare -a usedNames
+
+        for file in "$1"/*
+        do
+                if [[ ! $file =~ $1/[_A-Za-z][_A-Za-z\.\-]{0,13}$ ]]; then
+                        printf "%s\n" "$file"
+                elif repeat $file $usedNames ; then
+                        printf "%s\n" "$file"
+                else
+                        usedNames+=($(echo $file | tr 'A-Z' 'a-z'))
+			if [ ! -r $file ]; then
+				printf "Cannot read $file.\n"
+			fi
+                fi
+        done
+}
+
+if [[ ! $file =~ $1/[_A-Za-z][_A-Za-z\.\-]{0,13}$ ]]; then
+                        printf "%s\n" "$file"
+                elif repeat $file $usedNames ; then
+                        printf "%s\n" "$file"
+                else
+                        usedNames+=($(echo $file | tr 'A-Z' 'a-z'))
+                        if [ ! -r $file ]; then
+                                printf "Cannot read $file.\n"
+                        fi
+                fi#CHECK FOR -r OPTION
+recursive="false"
+if [ $1 == "-r" ]; then
+	recursive="true"
+	shift
+fi
+
+#check if the given is not a directory/exists/symbolic link
+if [ ! -d $1 ]; then
+        printf "$1 is not a directory.\n" 1>&2
+        exit 1
+elif [ -L $1 ]; then
+        printf "$1 is a symbolic link.\n" 1>&2
+        exit 1
+fi
+
+#if no directory or . is given, using current directory
+if [ $# -eq 0 ]; then
+    d=`pwd`
+elif [ $1 == "." ]; then
+    d=`pwd`
+else
+    d=$1
+fi
+
+#check if too many arguments
+if [ $# -gt 1 ]; then
+    printf "Only one directory required. Too many provided.\n" 1>&2
+    exit 2
+#check if starts with -
+elif [ "${dir:0:1}" == '-' ]; then
+    printf "Argument cannot start with \'-\'\n" 1>&2
+    exit 3
+fi
+
+#ONCE ARGUMENT CHECKED, RUN RECURSIVE/NON RECURSIVE OPTION DEPENDING
+#ON -r EXISTENCE
+if [ $recursive == "true" ]; then
+	checkR $d
+else
+	check $d
+fi
+
