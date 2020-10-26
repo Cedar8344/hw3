@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#Upper > lowercase
+tr '[:upper:]' '[:lower:]' |
+#Remove ?
+tr -d "?" |
+#convert grave accent
+tr "\`" "\'" |
+
+#Find all word table values, only word lines end with </td>
+grep '</td>'$|
+
+#Remove all <*> extraneous html stuff with sed + regex
+sed 's/<[^>]*>//g' |
+
+#seperate ' words into 2 different lines
+tr -s ' ' '[\n*]' |
+
+#remove words with characters not in the hawaiian alphabeht
+grep -E "^[pk'mnwlhaeiou]+$"|
+
+#Sort, remove duplicates
+sort -u

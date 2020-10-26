@@ -1,0 +1,92 @@
+Jerry Yang 005384352, CS 35L
+Lab 3, Spell-checking Hawaiian
+
+1. Initial Setup
+   locale | grep LC_CTYPE
+- used to check were in standard c. Since our output is:
+   LC_CTYPE="en_US.UTF-8"
+- we then run the command:
+   export LC_ALL='C'
+- to change to standard c.
+
+2. Getting Needed Files
+   sort /usr/share/dict/words > words
+- sort the provided words file on SEASnet servers and sort them, then
+write the output into a new file in my current directory (HW3) called
+words. The sort command will take the text file and sort it line-by-line.
+   wget hhtps://web.cs.ucla.edu/classes/fall20/cs35L/assign/assign3.html
+- copies the assignment html page as asked
+
+3. 'tr' commands
+   cat assign3.html | tr -c 'A-Za-z' '[\n*]'
+- using the '-c' option in tr means taht the command will target the
+complement of the set given, which means everything that isn't in the
+range 'A-Za-z' will be replaced by a newline. The range given 'A-za-z'
+simply means were matching (or not matching given the -c option) all
+alphabethical characters. '[\n*]' means were replacing everything with
+a newline. All combined, this command will output everything that starts
+with a character (upper or lowercase) while everything else is translated
+to a newline character. The actual output is a list of words in the file
+with many randomly distributed newlines between them.
+   cat assign3.html | tr -cs 'A-Za-z' '[\n*]'
+- The only difference here is the addition of the '-s' option. This will
+replace all repeat characters in the last set with only 1. That means all
+the extraneous whitespace in the pervious command won't show up again.
+This output gives the same list of words without the random whitespace, in
+the same order, each word on its own line. 
+   cat assign3.html | tr -cs 'A-Za-z' '[\n*]' | sort
+- Addition of the piped command 'sort'. Sort will sort using our given locale
+(which is standard C as we set it earlier). It will take the output from the
+previous command and sort it ASCII-wise (upper > lower case).
+   cat assign3.html | tr -cs 'A-Za-z' '[\n*]' | sort -u
+- Same as the last command, but the '-u' output will remove any duplicates
+found in the sorted output. Extra occurances of things like 'your' will be
+limited to one output.
+   cat assign3.html | tr -cs 'A-Za-z' '[\n*]' | sort -u | comm - words
+- 'comm' command will compare our output from the previous function to the
+words file we created ealier. The '-' in comm simply is a placeholder for
+what we are piping in, and words the file we are comaring too. It will 
+output 3 columns: 1 = unique to sort,2 = unique to words,3 = in both.
+   cat assign3.html | tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - words
+- Addition of the '-23' option in comm means that we will not output the
+2nd and 3rd columns, only leaving behind the words in the 1st column, which
+are words that are unique to only assign3.html. This is a 'crude'
+implmentation of an English Spellchecker
+
+4. Creating Hawaiian Spellcheck
+   wget https://www.mauimapp.com/moolelo/hwnwdshw.htm
+- Buildwords script:
+   1) change everything to lowercase (tr)
+   2) remove ?'s (tr)
+   3) convert grave accent to apostrophes (tr)
+   4) find all table entries = lines with </td> at the end (grep)
+   5) remove all html entries (sed)
+   6) seperate all words with apsotrophes (tr) with a newline
+   7) remove all non hawiian words. Since we are treating words like
+      pineapple is ok, we simply use another grep statement searching
+      for words only with the hawiian alphabeht
+   8) sort the resultant with (sort -u) to remove duplicates.
+
+   chmod +x buildwords
+- make the buildwords file executable
+   cat hwnwdshw.htm | ./buildwords > hwords
+- use the file we got with wget as our input into you script, write the output
+into hwords for a hawaiian dictionary.
+
+5. Hawaiian Spellchecker
+   tr -cs 'A-Za-z' '[\n*]' | tr 'A-Z' 'a-z' | sort -u | comm -23 - hwords
+- Virtually the same as the english spellchecker, however, our hwords is all
+in lowercase, so we will need to add an extra command before sorting to 
+convert everything into lowercase. Obviously use hwords instead of words.
+
+Mispelled words on assign3.html:
+ENGLISHCHECKER: 104  
+HAWAIICHECKER: 559
+
+Comapre the outputs of both commands with comm:
+Englishchecker reports mispelled but Hawaiian doesn't: 67
+   comm -23 en ha
+Examples: anDrEWs, wiki
+HawaiiChecker reports mispelled but english doesn't: 522
+   comm -13 en ha
+Examples: able, above
