@@ -13,7 +13,7 @@ grep '</td>'$|
 #Remove all <*> extraneous html stuff with sed + regex
 sed 's/<[^>]*>//g' |
 
-#seperate ' words into 2 different lines
+#seperate words with apstrophes  into 2 different lines
 tr -s ' ' '[\n*]' |
 
 #remove words with characters not in the hawaiian alphabeht
